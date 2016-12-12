@@ -1,0 +1,11 @@
+# depslib dependency file v1.0
+1481525475 source:c:\users\cody\desktop\c++\battleship\main.cpp
+	<iostream>
+	"ship.h"
+
+1481522738 c:\users\cody\desktop\c++\battleship\include\ship.h
+	<string>
+
+1481511360 source:c:\users\cody\desktop\c++\battleship\src\ship.cpp
+	"ship.h"
+
