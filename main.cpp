@@ -1,4 +1,9 @@
 #include <iostream>
+#include <cstring> //memset()
+#include <iomanip> //setw()
+#include <windows.h> //system()
+#include <stdlib.h> //rand() ?
+#include <time.h> //time()
 #include "ship.h"
 
 using namespace std;
@@ -6,13 +11,15 @@ using namespace std;
 void ResetGame();
 void DisplayBoard();
 void PlaceShips();
+void PlaceEnemyShips();
 
 const int MAX_SHIPS = 5;
 const int BOARD_SIZE = 10;
 const char MISS = 'O';
 const char HIT = 'X';
 
-char game_board[BOARD_SIZE][BOARD_SIZE] = {'~'};
+char game_board[BOARD_SIZE][BOARD_SIZE];
+char target_board[BOARD_SIZE][BOARD_SIZE];
 
 ship playerShips[MAX_SHIPS];
 ship computerShips[MAX_SHIPS];
@@ -21,10 +28,80 @@ int main()
 {
     ResetGame();
     DisplayBoard();
+    //PlaceShips();
+    PlaceEnemyShips();
+    DisplayBoard();
 
-    PlaceShips();
-
+    system("pause");
     return 0;
+}
+
+void PlaceEnemyShips(){
+    coord c(-1,-1);
+    srand((unsigned) time(NULL));
+    for(int k = 0; k < MAX_SHIPS; k++){
+        bool shipPlaced = false;
+        do{
+            ship* currentShip = &computerShips[k];
+            int x = rand() % 10;
+            int y = rand() % 10;
+            coord start(x,y);
+            computerShips[k].m_BoardPosition[0] = start;
+            int dir = rand() % 4 + 1;
+
+            switch(dir){
+                case 1://north
+                    //computerShips[k].m_BoardPosition[0] = cPlacement;
+                    for(int j = 1; j < currentShip->m_length; j++){
+                        currentShip->m_BoardPosition[j].x = start.x;
+                        currentShip->m_BoardPosition[j].y = (currentShip->m_BoardPosition[j-1].y - 1);
+                    }
+                    break;
+                case 2://south
+                    for(int j = 1; j < currentShip->m_length; j++){
+                        currentShip->m_BoardPosition[j].x = start.x;
+                        currentShip->m_BoardPosition[j].y = (currentShip->m_BoardPosition[j-1].y + 1);
+                    }
+                    break;
+                case 3://east
+                    for(int j = 1; j < currentShip->m_length; j++){
+                        currentShip->m_BoardPosition[j].y = start.y;
+                        currentShip->m_BoardPosition[j].x = (currentShip->m_BoardPosition[j-1].x + 1);
+                    }
+                    break;
+                case 4://west
+                    for(int j = 1; j < currentShip->m_length; j++){
+                        currentShip->m_BoardPosition[j].y = start.y;
+                        currentShip->m_BoardPosition[j].x = (currentShip->m_BoardPosition[j-1].x - 1);
+                    }
+                    break;
+            }
+
+            coord lastcoord = currentShip->m_BoardPosition[currentShip->m_length-1];
+            if(lastcoord.x >= BOARD_SIZE || lastcoord.x < 0){
+            } else if(lastcoord.y >= BOARD_SIZE || lastcoord.y < 0){
+            } else {
+                shipPlaced = true;
+            }
+
+            //check no boat is already there
+            for(int j = 0; j < MAX_SHIPS; j++){ //check all ships
+                for(int k = 0; k < computerShips[j].m_length; k++){ //check length of comparison boat
+                    for(int z = 0; z < currentShip->m_length; z++){ //check length of boat being put down
+                        if(currentShip->m_name != computerShips[j].m_name){ //avoid checking itself
+                            if(currentShip->m_BoardPosition[z] == computerShips[j].m_BoardPosition[k]){
+                                shipPlaced = false;
+                                //please don't yell at me
+                                goto endloop1;
+                            }
+                        }
+                    }
+                }
+            }
+            endloop1:
+            if(0){}
+        }while(!shipPlaced);
+    }
 }
 
 void PlaceShips(){
@@ -95,11 +172,11 @@ void PlaceShips(){
             }
 
             //check no boat is already there
-            for(int j = 0; j < MAX_SHIPS; j++){
-                for(int k = 0; k < currentShip->m_length; k++){
-                    for(int z = 0; z < currentShip->m_length; z++){
-                        if(currentShip->m_name != playerShips[j].m_name){
-                            if(currentShip->m_BoardPosition[k] == playerShips[j].m_BoardPosition[k]){
+            for(int j = 0; j < MAX_SHIPS; j++){ //check all ships
+                for(int k = 0; k < playerShips[j].m_length; k++){ //check length of comparison boat
+                    for(int z = 0; z < currentShip->m_length; z++){ //check length of boat being put down
+                        if(currentShip->m_name != playerShips[j].m_name){ //avoid checking itself
+                            if(currentShip->m_BoardPosition[z] == playerShips[j].m_BoardPosition[k]){
                                 cout << "\nYou cannot put your " << currentShip->m_name << " over your " << playerShips[j].m_name << "!";
                                 shipPlaced = false;
                                 //please don't yell at me
@@ -110,7 +187,7 @@ void PlaceShips(){
                 }
             }
             endloop:
-            shipPlaced = shipPlaced;
+            if(0){}//need code after label for goto
         }while(!shipPlaced);
 
         DisplayBoard();
@@ -118,7 +195,10 @@ void PlaceShips(){
 }
 
 void DisplayBoard(){
+    system("cls");
+    cout << setw(17) << "ENEMY BOARD\n";
     cout << " ";
+
     for(int i = 0; i < BOARD_SIZE; i++){
         cout << " " << i;
     }
@@ -130,8 +210,12 @@ void DisplayBoard(){
             for(int i = 0; i < BOARD_SIZE; i++){
                 for(int j = 0; j < BOARD_SIZE; j++){
                     coord c(i,j);
-                    if(playerShips[k].m_BoardPosition[z] == c)
-                        game_board[i][j] = 'B';
+                    if(playerShips[k].m_BoardPosition[z] == c){
+                        game_board[i][j] = playerShips[k].m_name[0];
+                    }
+                    if(playerShips[k].m_hit[z]){
+                        game_board[i][j] = 'X';
+                    }
                 }
             }
         }
@@ -140,19 +224,35 @@ void DisplayBoard(){
     for(int i = 0; i < BOARD_SIZE; i++){
         cout << i << " ";
         for(int j = 0; j < BOARD_SIZE; j++){
+            cout << target_board[j][i] << " ";
+        }
+        cout << endl;
+    }
+
+    cout << " ";
+
+    for(int i = 0; i < BOARD_SIZE; i++){
+        cout << " " << i;
+    }
+
+    cout << endl;
+
+    for(int i = 0; i < BOARD_SIZE; i++){
+        cout << i << " ";
+        for(int j = 0; j < BOARD_SIZE; j++){
             cout << game_board[j][i] << " ";
         }
         cout << endl;
     }
+
+    cout << setw(17) << "YOUR BOARD\n";
 }
 
 void ResetGame(){
     //resets board
-    for(int i = 0; i < BOARD_SIZE; i++){
-        for(int j = 0; j < BOARD_SIZE; j++){
-            game_board[i][j] = '~';
-        }
-    }
+    memset(game_board, '~', sizeof(game_board[0][0]) * BOARD_SIZE * BOARD_SIZE);
+    memset(target_board, '~', sizeof(target_board[0][0]) * BOARD_SIZE * BOARD_SIZE);
+
     //reset ships
     playerShips[0].m_name = "Carrier";
     playerShips[0].m_length = 5;
@@ -186,11 +286,10 @@ void ResetGame(){
 
     for(int j = 0; j < MAX_SHIPS; j++){
         for(int i = 0; i < MAX_SHIP_SIZE; i++){
-            playerShips[j].m_BoardPosition[i].x = -1;
-            playerShips[j].m_BoardPosition[i].y = -1;
+            coord offBoard(-1,-1);
 
-            computerShips[j].m_BoardPosition[i].x = -1;
-            computerShips[j].m_BoardPosition[i].y = -1;
+            playerShips[j].m_BoardPosition[i] = offBoard;
+            computerShips[j].m_BoardPosition[i] = offBoard;
 
         }
     }
